@@ -8,6 +8,7 @@ This simple script fetches the recent security advisories from GitHub and stores
 - Full description (description) is ignored for now
 
 """
+
 import json
 import jsonlines
 import os
@@ -21,7 +22,7 @@ CVE_TPL = """
 
 url = "https://api.github.com/graphql"
 api_token = os.environ["GITHUB_TOKEN"]
-headers = {"Authorization": "token %s" % api_token}
+headers = {"Authorization": f"token {api_token}"}
 gqljson = {
     "query": """
         query {
@@ -68,10 +69,7 @@ jsonldata = []
 for cve in data["data"]["securityAdvisories"]["nodes"]:
     cve_id = None
     assigner = "cve@mitre.org"
-    references = []
-
-    for r in cve["references"]:
-        references.append({"url": r["url"], "name": r["url"]})
+    references = [{"url": r["url"], "name": r["url"]} for r in cve["references"]]
 
     for id in cve["identifiers"]:
         if id["type"] == "CVE":
@@ -94,15 +92,15 @@ for cve in data["data"]["securityAdvisories"]["nodes"]:
         score = 9.0
         severity = p["severity"]
         attackComplexity = severity
-        if p["severity"] == "LOW":
+        if severity == "LOW":
             score = 2.0
             attackComplexity = "HIGH"
             vectorString = "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:N/A:N"
-        elif p["severity"] == "MODERATE":
+        elif severity == "MODERATE":
             score = 5.0
             severity = "MEDIUM"
             vectorString = "CVSS:3.1/AV:N/AC:H/PR:N/UI:N/S:U/C:L/I:L/A:L"
-        elif p["severity"] == "HIGH":
+        elif severity == "HIGH":
             score = 7.5
             attackComplexity = "LOW"
             vectorString = "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:L/I:L/A:L"
